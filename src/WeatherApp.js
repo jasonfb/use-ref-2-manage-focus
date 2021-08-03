@@ -1,14 +1,17 @@
 import React,  {useState, useRef, useEffect} from 'react'
 
 
+
 const WeatherApp = (props) => {
   const [zip, setZip] = useState(undefined);
   const [forecast, setForecast] = useState("")
   const zipCodeRef  = useRef();
 
-  const weather_forecast = "";
+  const [imperialOrMetric, setImperialOrMetric] = useState("imperial")
 
-  const OPEN_WEATHER_MAP_API_KEY = "f1fabb26c7c42ec9e4e5c7696e46b32f"
+  const dotenv = require('dotenv').config()
+
+  const OPEN_WEATHER_MAP_API_KEY = process.env.OPEN_WEATHER_MAP_API_KEY
 
   const fetchForecast = (zipCode) => {
     fetch(`//api.openweathermap.org/data/2.5/forecast?zip=${zip}&appid=${OPEN_WEATHER_MAP_API_KEY}`)
@@ -21,31 +24,26 @@ const WeatherApp = (props) => {
 
             let k_temp = result.list[0].main.temp;
 
-            let f_temp = Math.trunc((k_temp - 273.15 ) * 9/5 + 32)
-            let fc = `Currently ${f_temp} °F: ${ result.list[0].weather[0].description}`;
+            const converted_temp = (imperialOrMetric === "imperial" ?
+              Math.trunc((k_temp - 273.15 ) * 9/5 + 32) : k_temp - 273.15
+            );
 
-            console.log(fc)
+            let fc = `Currently ${converted_temp} °F: ${ result.list[0].weather[0].description}`;
             setForecast(fc)
-
           } else {
             setForecast(result.message)
-
           }
+          zipCodeRef.current.focus()
         }
       )
   }
 
-
   useEffect(() => {
     fetchForecast(zipCodeRef.current.value)
+  }, [zip, imperialOrMetric])
 
-  }, [zip])
-
-  const handleKeyPress = (event) => {
-
-    if (zipCodeRef.current)  {
-      setZip(zipCodeRef.current.value)
-    }
+  const handleMeasurementChange = (event) => {
+    setImperialOrMetric(event.target.value)
   }
 
   return (
@@ -55,12 +53,28 @@ const WeatherApp = (props) => {
     </h2>
 
     <br />
+
+      <input name={"imperial_or_metric"}
+             value={"imperial"}
+             id={"imperial"}
+             type={"radio"}
+             onChange={handleMeasurementChange} />
+      <label htmlFor={"imperial"}>Imperial</label>
+
+      <input name={"imperial_or_metric"}
+             value={"metric"}
+             type={"radio"}
+             id={"metric"}
+             onChange={handleMeasurementChange} />
+
+      <label htmlFor={"metric"}>Metric</label>
+
+      <br />
       Input your zipcode:
 
       <input name={"zip"}
              ref={zipCodeRef}
-             onChange={handleKeyPress}
-
+             onChange={(event) => setZip(event.target.value)}
       />
 
       <br />
